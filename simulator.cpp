@@ -116,9 +116,9 @@ simulator::results simulator::LRU(){
 
 simulator::results simulator::Optimal(){
     results returnValue;
-    std::list<pageTableEntry*> pageFrames;
+    std::vector<pageTableEntry*> pageFrames;
     std::unordered_map<int,pageTableEntry> pageTable;
-    std::unordered_map<pageTableEntry*,std::list<pageTableEntry*>::iterator> pageFramesIterators;
+    std::unordered_map<pageTableEntry*,int> pageFramesIndexes;
     for(int i = 0 ; i < (int)requests.size() ; i++){
         int request = requests[i];
         int virtualPageNumber = ((request) & 0XE0) >> 5;
@@ -133,22 +133,24 @@ simulator::results simulator::Optimal(){
             pageTable[virtualPageNumber].validTranslation = true;
             
             if(numFrames == (int)pageFrames.size()){
-                auto evicted = getFarthest(i,pageFrames,pageTable,pageFramesIterators);
+                int evictedIndex = getFarthest(i,pageFrames,pageTable,pageFramesIndexes);
+                
+                auto evicted = pageFrames[evictedIndex];
 
-                (*evicted)->validTranslation = false;
+                evicted->validTranslation = false;
                
               
-                pageFramesIterators.erase(*(evicted));
-                *(evicted) = pageEntryAddress;
+                pageFramesIndexes.erase(evicted);
+                pageFrames[evictedIndex] = pageEntryAddress;
                 
-                pageFramesIterators[pageEntryAddress] = evicted;
+                pageFramesIndexes[pageEntryAddress] = evictedIndex;
                 
 
             }
             else{
                
                 pageFrames.push_back(pageEntryAddress);
-                pageFramesIterators[pageEntryAddress] = std::prev(pageFrames.end());
+                pageFramesIndexes[pageEntryAddress] = pageFrames.size()-1;
                // std::cout << " this is the page frames end prev " << &*(std::prev(pageFrames.end())) << std::endl;
             }
             
@@ -163,7 +165,7 @@ simulator::results simulator::Optimal(){
         // std::cout << " address of begin iterator " << &*(pageFrames.begin()) << " address of end iterator " << &*(pageFrames.end()) <<std::endl;
         
        //  std::cout << "\n"; 
-        physicalPageNumber = std::distance(pageFrames.begin(), pageFramesIterators[pageEntryAddress]);
+        physicalPageNumber = pageFramesIndexes[pageEntryAddress];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
 
     }
@@ -173,10 +175,10 @@ simulator::results simulator::Optimal(){
 
 }
 
-std::list<simulator::pageTableEntry*>::iterator simulator::getFarthest(int index, std::list<pageTableEntry*> &pageFrames, 
-    std::unordered_map<int,pageTableEntry> &pageTable,std::unordered_map<pageTableEntry*,std::list<pageTableEntry*>::iterator> &pageFramesIterators){
+int simulator::getFarthest(int index, std::vector<pageTableEntry*> &pageFrames, 
+    std::unordered_map<int,pageTableEntry> &pageTable,std::unordered_map<pageTableEntry*,int> &pageFramesIndexes){
     bool usedInfuture;
-      std::list<pageTableEntry*>::iterator furthestUsed;
+      int furthestUsed;
        index++;
       for(auto &frame : pageFrames){
           usedInfuture = false;
@@ -195,7 +197,7 @@ std::list<simulator::pageTableEntry*>::iterator simulator::getFarthest(int index
             if(pageEntryAddress == frame){
                
                 usedInfuture = true;
-                furthestUsed = pageFramesIterators[frame];
+                furthestUsed = pageFramesIndexes[frame];
             }
 
 
@@ -204,7 +206,7 @@ std::list<simulator::pageTableEntry*>::iterator simulator::getFarthest(int index
           if(!usedInfuture){
               
               
-              return pageFramesIterators[frame];
+              return pageFramesIndexes[frame];
 
           }
          
