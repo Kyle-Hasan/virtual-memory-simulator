@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
     
     for(int i = 0; i < (int)requests.size(); i++){
       std::cout << "The physical address for virtual address " << requests[i] << " is " << simResults.addresses[i] << std::endl;
-
-    }
+      
+      }
   }
   }
   else{
