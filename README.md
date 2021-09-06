@@ -1,5 +1,5 @@
 # virtual-memory-simulator
-Simulates virtual memory in an operating system using LRU,Optimal,Clock and FIFO page replace algorithms using virtual addresses from a single process\
+Simulates virtual memory in an operating system using LRU,Optimal,Clock and FIFO page replace algorithms using virtual addresses from a single process.\
 <br/><br/>
 Receives input in the from command line arguments containing number of page frames, path to text file containing
 virtual address translation requests and type of algorithm to run. To see example files, please look in tests folder.
