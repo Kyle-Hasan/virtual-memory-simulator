@@ -4,22 +4,28 @@
 #include "simulator.h"
 int main() {
  
-int pageFrames  = 4;
+int pageFrames  = 3;
   //Addresses are 8 bits. First 3 bits are the page number, last 5 bits are the page offset.
-  std::vector<int> results;
+  std::vector<int> requests;
 
    for (std::string line; std::getline(std::cin, line);) {
-       results.push_back(stoi(line));
+       int request = stoi(line);
+       if(request > 255){
+         std::cout << " Requested address too large( > 255) " << std::endl;
+         break;
+       }
+       requests.push_back(request);
         
     }
-    simulator foo(results,pageFrames);
-    int test1 = 255;
-    auto j  = foo.Optimal();
-    std::cout << "number of missses " << j.misses << std::endl;
-    std::cout << "number of hits " << j.hits << std::endl;
+    simulator foo(requests,pageFrames);
     
-    for(auto h : j.addresses){
-      //std::cout << " this was the address " << h << std::endl;
+    
+    auto simResults  = foo.Clock();
+   std::cout << "number of page faults running clock  " << simResults.misses << std::endl;
+    std::cout << "number of hits running clock " << simResults.hits << std::endl;
+    
+    for(auto h : simResults.addresses){
+     // std::cout << " this was the address " << h << std::endl;
     }
    
  

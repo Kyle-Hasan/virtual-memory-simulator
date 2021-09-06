@@ -2,6 +2,9 @@
 #include <vector>
 #include <deque>
 #include <list>
+#include <utility>
+#include <iostream>
+#include <iterator>   
 class simulator {
     
 
@@ -23,13 +26,14 @@ class simulator {
     results LRU();
     results FIFO();
     results Optimal();
-
+    results Clock();
 
     private:
     std::vector<int> requests;
     int numFrames;
-    int getFarthest(int index, std::vector<pageTableEntry*> &pageFrames, 
-    std::unordered_map<int,pageTableEntry> &pageTable,std::unordered_map<pageTableEntry*,int> &pageFramesIndexes);
+    pageTableEntry* getFarthest(int index, 
+    std::unordered_map<int,pageTableEntry> &pageTable, std::unordered_map<pageTableEntry*,int> &pageFrames);
+
     
     
 };

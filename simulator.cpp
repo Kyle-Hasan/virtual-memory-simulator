@@ -1,6 +1,5 @@
 #include "simulator.h"
-#include <iostream>
-#include <iterator>
+
 simulator::simulator(std::vector<int> &requests, int &numFrames){
     this->requests = requests;
     this->numFrames = numFrames;
@@ -65,7 +64,7 @@ simulator::results simulator::LRU(){
     std::list<pageTableEntry*> pageFrames;
     std::unordered_map<int,pageTableEntry> pageTable;
     std::unordered_map<pageTableEntry*,std::list<pageTableEntry*>::iterator> pageFramesIterators;
-    //std::cout << "size of a pageTablEntry" << sizeof(pageTableEntry) << std::endl;
+    
     for(const auto &request : requests){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
         int pageOffset = ((request))& 0x1F;
@@ -116,9 +115,9 @@ simulator::results simulator::LRU(){
 
 simulator::results simulator::Optimal(){
     results returnValue;
-    std::vector<pageTableEntry*> pageFrames;
+    std::unordered_map<pageTableEntry*,int> pageFrames;
     std::unordered_map<int,pageTableEntry> pageTable;
-    std::unordered_map<pageTableEntry*,int> pageFramesIndexes;
+   // std::cout << " num frames is " << numFrames << std::endl;
     for(int i = 0 ; i < (int)requests.size() ; i++){
         int request = requests[i];
         int virtualPageNumber = ((request) & 0XE0) >> 5;
@@ -128,44 +127,44 @@ simulator::results simulator::Optimal(){
         int physicalPageNumber;
        
        
-        if(!pageTable[virtualPageNumber].validTranslation){
+        if(pageTable[virtualPageNumber].validTranslation){
+           returnValue.hits++;
+
+            }
+        else{
+         // std::cout << "vpn missed " << virtualPageNumber << "request " << request << std::endl;
             returnValue.misses++;
             pageTable[virtualPageNumber].validTranslation = true;
             
             if(numFrames == (int)pageFrames.size()){
-                int evictedIndex = getFarthest(i,pageFrames,pageTable,pageFramesIndexes);
+                pageTableEntry* evicted = getFarthest(i,pageTable,pageFrames);
                 
-                auto evicted = pageFrames[evictedIndex];
+                
 
                 evicted->validTranslation = false;
                
-              
-                pageFramesIndexes.erase(evicted);
-                pageFrames[evictedIndex] = pageEntryAddress;
+                int pageFrameIndex = pageFrames[evicted];
+                pageFrames.erase(evicted);
+                pageFrames[pageEntryAddress] = pageFrameIndex;
                 
-                pageFramesIndexes[pageEntryAddress] = evictedIndex;
+                
                 
 
             }
             else{
                
-                pageFrames.push_back(pageEntryAddress);
-                pageFramesIndexes[pageEntryAddress] = pageFrames.size()-1;
+                pageFrames[pageEntryAddress] = pageFrames.size();
+                
                // std::cout << " this is the page frames end prev " << &*(std::prev(pageFrames.end())) << std::endl;
             }
-            
-
-        }
-        else{
-          //  std::cout << " theres a hit" << std::endl;
-            returnValue.hits++;
+          
         }
     
          
         // std::cout << " address of begin iterator " << &*(pageFrames.begin()) << " address of end iterator " << &*(pageFrames.end()) <<std::endl;
         
        //  std::cout << "\n"; 
-        physicalPageNumber = pageFramesIndexes[pageEntryAddress];
+        physicalPageNumber = pageFrames[pageEntryAddress];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
 
     }
@@ -175,13 +174,104 @@ simulator::results simulator::Optimal(){
 
 }
 
-int simulator::getFarthest(int index, std::vector<pageTableEntry*> &pageFrames, 
-    std::unordered_map<int,pageTableEntry> &pageTable,std::unordered_map<pageTableEntry*,int> &pageFramesIndexes){
+simulator::results simulator::Clock(){
+    results returnValue;
+    std::vector<std::pair<pageTableEntry*,bool >> pageFrames;
+    std::unordered_map<int, pageTableEntry> pageTable;
+    std::unordered_map<pageTableEntry*,int> pageFrameIndexes;
+    int clockHand = 0;
+    bool secondChance;
+
+    for(const auto &request : requests){
+        int virtualPageNumber = ((request) & 0XE0) >> 5;
+       
+        int pageOffset = ((request))& 0x1F;
+        auto pageEntryAddress = &(pageTable[virtualPageNumber]);
+        int physicalPageNumber;
+        //std::cout << " request is " << request << std::endl;
+        if(pageTable[virtualPageNumber].validTranslation){
+            returnValue.hits++;
+            std::cout << " request hit " << request << std::endl;
+            
+           std::cout << " page entry address " << pageEntryAddress << std::endl;
+            int index = pageFrameIndexes[pageEntryAddress] ;
+            pageFrames[index].second = true;
+            std::cout << " set " << index << " to true" << std::endl;
+            }
+
+        else{
+            std::cout << " request missed " << request/32 << std::endl;
+            returnValue.misses++;
+            pageTable[virtualPageNumber].validTranslation = true;
+
+            if(numFrames == (int)pageFrames.size()){
+
+                while(true){
+                   // std::cout << "clock hand is at " << clockHand << std::endl;
+                    secondChance = pageFrames[clockHand].second;
+                    if(!secondChance){
+                        break;
+                    }
+                   // std::cout << "setting the value at " << clockHand << " to false" << std::endl;
+                    pageFrames[clockHand].second = false;
+                    clockHand = (clockHand+1)%numFrames;
+                }
+                std::cout << std::endl;
+
+                
+                //std::cout << "clock hand ended at " << clockHand << std::endl;
+                std::pair<pageTableEntry*,bool > evicted = pageFrames[clockHand];
+                
+                pageFrames[clockHand].first->validTranslation = false;
+                pageFrameIndexes.erase(evicted.first);
+                
+                pageFrames[clockHand] = std::make_pair(pageEntryAddress,true);
+                pageFrameIndexes[pageEntryAddress] = clockHand;
+               
+
+
+
+            }
+            else{
+                pageFrames.push_back(std::make_pair(pageEntryAddress,true));
+                pageFrameIndexes[pageEntryAddress] = pageFrames.size()-1;
+
+            }
+           
+
+
+        }
+         for(auto &h : pageTable){
+                if(h.second.validTranslation){
+                std::cout << " address of " << h.first*32 << " is at " << &(h.second) << std::endl;
+                }
+
+            }
+             for(int i = 0; i < pageFrames.size(); i++){
+                    std::cout << " page frames contains " << pageFrames[i].first << " at " << i << "valid bit " << pageFrames[i].second << std::endl;
+                }
+                std::cout << "hand is at " << clockHand << std::endl;
+            std::cout << std::endl;
+        physicalPageNumber = pageFrameIndexes[pageEntryAddress];
+        returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
+        
+
+    }
+
+
+    return returnValue;
+}
+
+simulator::pageTableEntry* simulator::getFarthest(int index, 
+    std::unordered_map<int,pageTableEntry> &pageTable, std::unordered_map<pageTableEntry*,int> &pageFrames){
     bool usedInfuture;
-      int furthestUsed;
+      pageTableEntry* furthestUsed;
        index++;
+       int furthest = -1;
       for(auto &frame : pageFrames){
           usedInfuture = false;
+          pageTableEntry* currentFrame = frame.first;
+
           for(int starting = index; starting < (int)requests.size(); starting++){
             int virtualPageNumber = ((requests[starting]) & 0XE0) >> 5;
             auto pageEntry= pageTable.find(virtualPageNumber);
@@ -194,27 +284,32 @@ int simulator::getFarthest(int index, std::vector<pageTableEntry*> &pageFrames,
             }
             pageTableEntry* pageEntryAddress = &(pageEntry->second);
             
-            if(pageEntryAddress == frame){
+            
+            if(pageEntryAddress == currentFrame ){
+                if(starting > furthest){
+                furthest = starting;
+                furthestUsed = currentFrame;
+                }
                
                 usedInfuture = true;
-                furthestUsed = pageFramesIndexes[frame];
+                break;
+                
             }
 
 
 
           }
+          
           if(!usedInfuture){
-              
-              
-              return pageFramesIndexes[frame];
+            
+            return currentFrame;
 
           }
          
 
       }
- 
+    
      return furthestUsed;
    
 
     }
-
