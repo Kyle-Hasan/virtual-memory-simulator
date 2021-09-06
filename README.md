@@ -3,6 +3,7 @@ Simulates virtual memory in an operating system using LRU,Optimal,Clock and FIFO
 <br/><br/>
 Receives input in the from command line arguments containing number of page frames, path to text file containing
 virtual address translation requests and type of algorithm to run. To see example files, please look in tests folder.
+Number of requests must be able to fit in an integer.
 Outputs the number of hits, page faults and physical address translations on the console.
 <br/><br/>
 In order to run, first compile using g++ main.cpp simulator -o (executable name) where executable name can be whatever you want. \
