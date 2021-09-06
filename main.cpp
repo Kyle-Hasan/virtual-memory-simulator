@@ -37,20 +37,20 @@ int main(int argc, char *argv[]) {
         
     }
     file.close();
-    simulator foo(requests,pageFrames);
+    simulator sim(requests,pageFrames);
     simulator::results simResults;
     bool valid = true;
     if(algo == "LRU"){
-     simResults  = foo.LRU();
+     simResults  = sim.LRU();
     }
     else if(algo == "Optimal"){
-      simResults = foo.Optimal();
+      simResults = sim.Optimal();
     }
     else if(algo == "Clock"){
-      simResults = foo.Clock();
+      simResults = sim.Clock();
     }
     else if(algo == "FIFO"){
-      simResults = foo.FIFO();
+      simResults = sim.FIFO();
     }
     else{
       valid = false;
@@ -62,8 +62,9 @@ int main(int argc, char *argv[]) {
    std::cout << "number of hits running " << algo << " " << simResults.hits << std::endl;
    
     
-    for(auto address : simResults.addresses){
-      std::cout << " this was the address " << address << std::endl;
+    for(int i = 0; i < (int)requests.size(); i++){
+      std::cout << "The physical address for virtual address " << requests[i] << " is " << simResults.addresses[i] << std::endl;
+
     }
   }
   }
