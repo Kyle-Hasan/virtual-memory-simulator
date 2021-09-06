@@ -7,7 +7,6 @@ simulator::simulator(std::vector<int> &requests, int &numFrames){
 }
 
 
-
 simulator::results simulator::FIFO(){
     results returnValue;
     //stores pointers to pageTableEntries in order to edit them when they are removed
@@ -18,8 +17,7 @@ simulator::results simulator::FIFO(){
     //values are iterators to deque in order to get index of entries for physical page translations.
     //the keys pageTableEntry* in order to erase entries when an entry is removed from frames
     std::unordered_map<pageTableEntry*,std::deque<pageTableEntry*>::iterator> pageFramesIterators;
-    
-    
+
     for(const auto &request : requests){
         //uses bit masks to store specified bits
         int virtualPageNumber = ((request) & 0XE0) >> 5;
@@ -63,14 +61,9 @@ simulator::results simulator::FIFO(){
         }
         //calculates address as physicalPageNumber*32+ pageOffset because the page sizes are 32.
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
-           
 
-
-
-    }
+        }
     return returnValue;
-
-
 
 }
 
@@ -114,15 +107,11 @@ simulator::results simulator::LRU(){
             pageFramesIterators[pageEntryAddress] = pageFrames.begin();
             //start of the list is always page 0 in physical memory
             physicalPageNumber = 0;
-
-
-
         }
         //this else runs if there is a hit
         else{
             //sets the physical page number as the distance from the iterator at the beginning of the list
             //to the iterator where the page entry actually is.
-           
            physicalPageNumber = std::distance(pageFrames.begin(), pageFramesIterators[pageEntryAddress]);
             //moves the page from the back of the list to the front of the list to represent it's the most recently used page
             pageFrames.erase(pageFramesIterators[pageEntryAddress]);
@@ -131,15 +120,13 @@ simulator::results simulator::LRU(){
 
             returnValue.hits++;
             }
-        
-        
         //calculates address as physicalPageNumber*32+ pageOffset because the page sizes are 32.
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
         }
         
         return returnValue;
+    }
 
-}
 
 simulator::results simulator::Optimal(){
     results returnValue;
@@ -175,8 +162,6 @@ simulator::results simulator::Optimal(){
                 //gets farthest used or used page entry in the future
                 //the i represents the index of the current page request, so all indexes after are in the future
                 pageTableEntry* evicted = getFarthest(i,pageTable,pageFrames);
-
-                
                 evicted->validTranslation = false;
                 //gets physical page number of evicted page
                 int pageFrameIndex = pageFrames[evicted];
@@ -190,23 +175,16 @@ simulator::results simulator::Optimal(){
             else{
                //sets physical page number of page entry to be the first open frame.
                 pageFrames[pageEntryAddress] = pageFrames.size();
-                
-              
-            }
+                }
           
         }
-    
-         
-       
         physicalPageNumber = pageFrames[pageEntryAddress];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
 
     }
-
     return returnValue; 
-
-
 }
+
 
 simulator::results simulator::Clock(){
     results returnValue;
@@ -314,13 +292,12 @@ simulator::results simulator::Clock(){
         //the physical page number is whatever index the page is in the pageFrames vector
         physicalPageNumber = pageFrameIndexes[pageEntryAddress];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
-        
-
-    }
-
+        }
 
     return returnValue;
 }
+
+
 //used to return the furthest pageTableEntry or the one not used at all in the future
 //page frames represents physical memory, index represent the current position
 simulator::pageTableEntry* simulator::getFarthest(int index, 
@@ -370,10 +347,7 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
                 break;
                 
             }
-
-
-
-          }
+        }
           //if the page is never used in the future, it can be returned instantly to be evicted
           if(!usedInfuture){
             
@@ -381,10 +355,7 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
 
           }
          
-
-      }
+        }
     
-     return furthestUsed;
-   
-
-    }
+    return furthestUsed;
+   }
