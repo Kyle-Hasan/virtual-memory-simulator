@@ -213,18 +213,16 @@ simulator::results simulator::Clock(){
         */
         if(pageTable[virtualPageNumber].validTranslation){
             returnValue.hits++;
-            std::cout << " request hit " << request << std::endl;
             
-           std::cout << " page entry address " << pageEntryAddress << std::endl;
             //get index of the pageEntry corresponding to the virtual page number in the vector(aka memory)
             int index = pageFrameIndexes[pageEntryAddress] ;
             //sets the page entry's second chance bit to true since it there was a hit
             pageFrames[index].second = true;
-            std::cout << " set " << index << " to true" << std::endl;
+            
             }
         //this else runs if there was a page fault
         else{
-            std::cout << " request missed " << request/32 << std::endl;
+          
             returnValue.misses++;
             //sets the valid translation to true to represent that we are loading the page into memory
             pageTable[virtualPageNumber].validTranslation = true;
@@ -245,7 +243,7 @@ simulator::results simulator::Clock(){
                     the max number of frames) */
                     clockHand = (clockHand+1)%numFrames;
                 }
-                std::cout << std::endl;
+                
 
                 
                 //gets evicted page as the last entry in pageFrames vector touched by the clock hand
