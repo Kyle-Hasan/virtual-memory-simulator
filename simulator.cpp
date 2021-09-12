@@ -19,7 +19,7 @@ simulator::results simulator::FIFO(){
     std::unordered_map<pageTableEntry*,std::deque<pageTableEntry*>::iterator> pageFramesIterators;
 
     for(const auto &request : requests){
-        //uses bit masks to store specified bits
+        
         int virtualPageNumber = ((request) & 0XE0) >> 5;
         int pageOffset = ((request))& 0x1F;
 
@@ -44,9 +44,9 @@ simulator::results simulator::FIFO(){
             pageFramesIterators.erase(evicted);
 
             }
-            //adds new page to back of queue, represented by adding it's address
+            
             Frames.push_back(pageEntryAddress);
-            //sets the iterator to the pageEntry to point to the last element of the queue.
+           
             pageFramesIterators[pageEntryAddress] = std::prev(Frames.end());
 
             //sets the physical page number as the distance from the iterator at the beginning of the queue 
@@ -55,7 +55,7 @@ simulator::results simulator::FIFO(){
             
         }
         else{
-            //if there is a hit, find the iterator to the pageEntry and calculate physical page number.
+            
             physicalPageNumber = std::distance(Frames.begin(), pageFramesIterators[pageEntryAddress]);
             returnValue.hits++;
         }
@@ -69,12 +69,12 @@ simulator::results simulator::FIFO(){
 
 simulator::results simulator::LRU(){
     results returnValue;
-    //stores page frames as a doubly linked list
+    //stores page frames as a doubly linked list(so that removing elements from the middle is more efficient)
     //least recently page is at the back ,most recently used page is at the front
     std::list<pageTableEntry*> pageFrames;
     //maps virtual page number to a page table entry
     std::unordered_map<int,pageTableEntry> pageTable;
-    //maps entries from page frames to their respective iterator in the page frames list
+    //maps entries from page table to their respective iterator in the page frames list
     std::unordered_map<pageTableEntry*,std::list<pageTableEntry*>::iterator> pageFramesIterators;
     
     for(const auto &request : requests){
@@ -91,12 +91,12 @@ simulator::results simulator::LRU(){
             //if the list has the maximum number of page frames in memory, then the 
             //least recently used page needs to be evicted
             if((int)pageFrames.size() == numFrames){
-                //the least recently used page is always at the back of the list, so it's evicted
+            
                 pageTableEntry *evicted = pageFrames.back();
-                //makes sure the evicted page has a false translation and removes it from list
+             
                 evicted->validTranslation = false;
                 pageFrames.pop_back();
-                //erases iterator to evicted entry
+           
                 pageFramesIterators.erase(evicted);
 
             }
@@ -105,11 +105,12 @@ simulator::results simulator::LRU(){
             //sets iterator of new page entry to intially start at beginning of the list
             //(this gets updated when new pages are added)
             pageFramesIterators[pageEntryAddress] = pageFrames.begin();
-            //start of the list is always page 0 in physical memory
+        
             physicalPageNumber = 0;
         }
-        //this else runs if there is a hit
+    
         else{
+			 returnValue.hits++;
             //sets the physical page number as the distance from the iterator at the beginning of the list
             //to the iterator where the page entry actually is.
            physicalPageNumber = std::distance(pageFrames.begin(), pageFramesIterators[pageEntryAddress]);
@@ -118,7 +119,7 @@ simulator::results simulator::LRU(){
             pageFrames.push_front(pageEntryAddress);
             pageFramesIterators[pageEntryAddress] = pageFrames.begin();
 
-            returnValue.hits++;
+          
             }
         //calculates address as physicalPageNumber*32+ pageOffset because the page sizes are 32.
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
@@ -144,12 +145,12 @@ simulator::results simulator::Optimal(){
         auto pageEntryAddress = &pageTable[virtualPageNumber];
         int physicalPageNumber;
        
-        //if there is a hit there is nothing  that needs to be done other than update the counter
+       
         if(pageTable[virtualPageNumber].validTranslation){
            returnValue.hits++;
 
             }
-        //this else runs if there is a page fault
+       
         else{
          
             returnValue.misses++;
@@ -159,13 +160,13 @@ simulator::results simulator::Optimal(){
             //if the map contains the maximum of page frames in memory, the page used furthest in future
             //or not at all needs to be evicted.
             if(numFrames == (int)pageFrames.size()){
-                //gets farthest used or used page entry in the future
+                
                 //the i represents the index of the current page request, so all indexes after are in the future
                 pageTableEntry* evicted = getFarthest(i,pageTable,pageFrames);
                 evicted->validTranslation = false;
                 //gets physical page number of evicted page
                 int pageFrameIndex = pageFrames[evicted];
-                //erases evicted page from memory
+                
                 pageFrames.erase(evicted);
                 //replaces page at evicted physical page number with new page
                 pageFrames[pageEntryAddress] = pageFrameIndex;
@@ -208,23 +209,21 @@ simulator::results simulator::Clock(){
         int pageOffset = ((request))& 0x1F;
         auto pageEntryAddress = &(pageTable[virtualPageNumber]);
         int physicalPageNumber;
-        //std::cout << " request is " << request << std::endl;
-        /*if there a is valid translation for the virtual page number, then there is a hit
-        */
+        
         if(pageTable[virtualPageNumber].validTranslation){
             returnValue.hits++;
             
-            //get index of the pageEntry corresponding to the virtual page number in the vector(aka memory)
+            
             int index = pageFrameIndexes[pageEntryAddress] ;
             //sets the page entry's second chance bit to true since it there was a hit
             pageFrames[index].second = true;
             
             }
-        //this else runs if there was a page fault
+        
         else{
           
             returnValue.misses++;
-            //sets the valid translation to true to represent that we are loading the page into memory
+            
             pageTable[virtualPageNumber].validTranslation = true;
             
             //if the max number of page frames are in memory , then a page needs to be evicted
@@ -232,12 +231,12 @@ simulator::results simulator::Clock(){
                 
                 //moves the clock hand along the vector until there clock hand points to an entry with a false second chance bit
                 while(true){
-                    //touches the entry in the vector with the clock hand and checks it's second chance bit
+                    
                     secondChance = pageFrames[clockHand].second;
                     if(!secondChance){
                         break;
                     }
-                    //sets second chance bit of entry touched by clock hand to false
+                
                     pageFrames[clockHand].second = false;
                     /*moves up clock hand( the expression is used to loop the vector around once clock hand hits
                     the max number of frames) */
@@ -274,19 +273,8 @@ simulator::results simulator::Clock(){
 
 
         }
-        /*
-         for(auto &h : pageTable){
-                if(h.second.validTranslation){
-                std::cout << " address of " << h.first*32 << " is at " << &(h.second) << std::endl;
-                }
-
-            }
-             for(int i = 0; i < (int)pageFrames.size(); i++){
-                    std::cout << " page frames contains " << pageFrames[i].first << " at " << i << "valid bit " << pageFrames[i].second << std::endl;
-                }
-                std::cout << "hand is at " << clockHand << std::endl;
-            std::cout << std::endl;
-            */
+     
+            
         //the physical page number is whatever index the page is in the pageFrames vector
         physicalPageNumber = pageFrameIndexes[pageEntryAddress];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
@@ -304,14 +292,14 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
       pageTableEntry* furthestUsed;
       //moves the index up so that it starts at the first future index.
        index++;
-       //stores index to furthest entry
+      
        int furthest = -1;
-       //goes through every frame in memory
+     
       for(auto &frame : pageFrames){
           usedInfuture = false;
         
           pageTableEntry* currentFrame = frame.first;
-        //starts at the first future index and goes until the of the  requests vector
+        
           for(int starting = index; starting < (int)requests.size(); starting++){
             int virtualPageNumber = ((requests[starting]) & 0XE0) >> 5;
             /*sees if the page requested in the future is currently stored in the page table,
@@ -346,7 +334,7 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
                 
             }
         }
-          //if the page is never used in the future, it can be returned instantly to be evicted
+       
           if(!usedInfuture){
             
             return currentFrame;
