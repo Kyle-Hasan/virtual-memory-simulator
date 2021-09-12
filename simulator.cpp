@@ -23,7 +23,7 @@ simulator::results simulator::FIFO(){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
         int pageOffset = ((request))& 0x1F;
 
-        auto pageEntryAddress = &pageTable[virtualPageNumber];
+        pageTableEntry*  pageEntryAddress = &pageTable[virtualPageNumber];
 
         int physicalPageNumber;
 
@@ -82,7 +82,7 @@ simulator::results simulator::LRU(){
     for(const auto &request : requests){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
         int pageOffset = ((request))& 0x1F;
-        auto pageEntryAddress = &pageTable[virtualPageNumber];
+        pageTableEntry*  pageEntryAddress = &pageTable[virtualPageNumber];
         int physicalPageNumber;
       
         if(!pageTable[virtualPageNumber].validTranslation){
@@ -144,7 +144,7 @@ simulator::results simulator::Optimal(){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
        
         int pageOffset = ((request))& 0x1F;
-        auto pageEntryAddress = &pageTable[virtualPageNumber];
+        pageTableEntry*  pageEntryAddress = &pageTable[virtualPageNumber];
         int physicalPageNumber;
        
        
@@ -210,7 +210,8 @@ simulator::results simulator::Clock(){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
        
         int pageOffset = ((request))& 0x1F;
-        auto pageEntryAddress = &(pageTable[virtualPageNumber]);
+		
+        pageTableEntry* pageEntryAddress = &(pageTable[virtualPageNumber]);
         int physicalPageNumber;
         
         if(pageTable[virtualPageNumber].validTranslation){
@@ -301,7 +302,7 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
             /*sees if the page requested in the future is currently stored in the page table,
             if not this request can be skipped since it doesn't correspond to any frame in memory
             */
-            auto pageEntry= pageTable.find(virtualPageNumber);
+            pageTableEntry* pageEntry= pageTable.find(virtualPageNumber);
             if(pageEntry == pageTable.end()){
                 continue;
 
