@@ -10,13 +10,16 @@ class simulator {
      //Addresses are 8 bits. First 3 bits are the page number, last 5 bits are the page offset.
     public:
     struct pageTableEntry{
+		//if valid translation is true then the page is in memory, if not the page isn't in memory
         bool validTranslation = false;
 
         }typedef pageTableEntry;
 
     struct results{
+		//number of page faults
         int misses = 0;
         int hits = 0;
+		//stores physical addresses
         std::vector<int> addresses;
        
 

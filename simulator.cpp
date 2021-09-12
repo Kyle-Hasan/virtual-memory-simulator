@@ -27,11 +27,11 @@ simulator::results simulator::FIFO(){
 
         int physicalPageNumber;
 
-        //validTranslation false means the page is not in memory and needs to be loaded in
+       
         if(!pageTable[virtualPageNumber].validTranslation){
-            //sets valid translation to true to represent bringing page into memory
+           
             pageTable[virtualPageNumber].validTranslation = true;
-            //records page fault
+           
             returnValue.misses++;
 
         //if the queue holds the max number of page frames in memory, a page has to be evicted
@@ -55,11 +55,11 @@ simulator::results simulator::FIFO(){
             
         }
         else{
-            
+            //index of a page in the queue is difference between beginning iterator and iterator pointing to the page
             physicalPageNumber = std::distance(Frames.begin(), pageFramesIterators[pageEntryAddress]);
             returnValue.hits++;
         }
-        //calculates address as physicalPageNumber*32+ pageOffset because the page sizes are 32.
+        //calculates physical address as physicalPageNumber*32+ pageOffset because the page sizes are 32.
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
 
         }
@@ -82,9 +82,9 @@ simulator::results simulator::LRU(){
         int pageOffset = ((request))& 0x1F;
         auto pageEntryAddress = &pageTable[virtualPageNumber];
         int physicalPageNumber;
-       //if the validTranslation is false, then page is not in memory and needs to be loaded in 
+      
         if(!pageTable[virtualPageNumber].validTranslation){
-            //sets valid translation to true in order to represent page is going to be loaded into memory
+          
             pageTable[virtualPageNumber].validTranslation = true;
             
             returnValue.misses++;
@@ -154,7 +154,7 @@ simulator::results simulator::Optimal(){
         else{
          
             returnValue.misses++;
-            //sets valid translation to true in order to represent page is going to be loaded into memory
+            
             pageTable[virtualPageNumber].validTranslation = true;
             
             //if the map contains the maximum of page frames in memory, the page used furthest in future
@@ -194,10 +194,10 @@ simulator::results simulator::Clock(){
     in the pageTable map) 
     the bool represents the "second chance" bit*/
     std::vector<std::pair<pageTableEntry*,bool >> pageFrames;
-    //maps physical page numbers to page table entries
+    //maps virtual page numbers to page table entries
     std::unordered_map<int, pageTableEntry> pageTable;
-    /*maps page table entries to physical page numbers(pointer are used so that entries evicted from pageFrames)
-    can be erased from this map by value.
+    /*maps page table entries to physical page numbers(pointer are used so that entries evicted from pageFrames
+    can be erased from this map by value.)
     */
     std::unordered_map<pageTableEntry*,int> pageFrameIndexes;
     int clockHand = 0;
@@ -273,7 +273,7 @@ simulator::results simulator::Clock(){
         }
      
             
-        //the physical page number is whatever index the page is in the pageFrames vector
+        
         physicalPageNumber = pageFrameIndexes[pageEntryAddress];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
         }
@@ -313,15 +313,14 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
             else if(!pageEntry->second.validTranslation){
                 continue;
             }
-            //gets address of page table entry from the page table
+          
             pageTableEntry* pageEntryAddress = &(pageEntry->second);
             
             /*if the page entry address is the same as the current frame,
             this means that page is used in the future
             */
             if(pageEntryAddress == currentFrame ){
-                /*stores the furthest used page as the one with the largest index
-                with regards with when it's used in the future*/
+                
                 if(starting > furthest){
                 furthest = starting;
                 furthestUsed = currentFrame;
