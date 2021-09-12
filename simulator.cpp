@@ -134,7 +134,7 @@ simulator::results simulator::LRU(){
 simulator::results simulator::Optimal(){
     results returnValue;
     //maps pageTableEntry pointers to physical page numbers. 
-    //uses pointers so that we can edit the page table entries in pageTable
+    //uses pointers so that we can edit the page table entries in pageTable map when pageEntries are evicted
     std::unordered_map<pageTableEntry*,int> pageFrames;
     //maps virtual page numbers to page table entries
     std::unordered_map<int,pageTableEntry> pageTable;
@@ -202,8 +202,9 @@ simulator::results simulator::Clock(){
     can be erased from this map by value.)
     */
     std::unordered_map<pageTableEntry*,int> pageFrameIndexes;
+	//clock hand points to the last page added to memory
     int clockHand = 0;
-    bool secondChance;
+   
 
     for(const auto &request : requests){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
@@ -231,16 +232,16 @@ simulator::results simulator::Clock(){
             //if the max number of page frames are in memory , then a page needs to be evicted
             if(numFrames == (int)pageFrames.size()){
                 
-                //moves the clock hand along the vector until there clock hand points to an entry with a false second chance bit
+                //moves the clock hand along the vector until the clock hand points to an page frame in memory with a false second chance bit
                 while(true){
                     
-                    secondChance = pageFrames[clockHand].second;
-                    if(!secondChance){
+                    
+                    if(!pageFrames[clockHand].second){
                         break;
                     }
                 
                     pageFrames[clockHand].second = false;
-                    /*moves up clock hand( the expression is used to loop the vector around once clock hand hits
+                    /*moves the clock hand to next frame in memory( the expression is used to loop the vector around once clock hand hits
                     the max number of frames) */
                     clockHand = (clockHand+1)%numFrames;
                 }
@@ -269,13 +270,8 @@ simulator::results simulator::Clock(){
                 pageFrameIndexes[pageEntryAddress] = pageFrames.size()-1;
 
             }
-           
+          }
 
-
-        }
-     
-            
-        
         physicalPageNumber = pageFrameIndexes[pageEntryAddress];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
         }
