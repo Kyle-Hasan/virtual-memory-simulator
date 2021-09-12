@@ -245,11 +245,9 @@ simulator::results simulator::Clock(){
                 
 
                 
-                //gets evicted page as the last entry in pageFrames vector touched by the clock hand
+                //removes evicted page
                 std::pair<pageTableEntry*,bool > evicted = pageFrames[clockHand];
-                /*sets the translation of evicted value to false and erases it from indexes map as it
-                is no longer in memory
-                */
+               
                 pageFrames[clockHand].first->validTranslation = false;
                 pageFrameIndexes.erase(evicted.first);
                 //loads new page in memory with second chance bit set to true
