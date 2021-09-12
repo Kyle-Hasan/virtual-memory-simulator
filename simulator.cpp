@@ -245,14 +245,14 @@ simulator::results simulator::Clock(){
                 
 
                 
-                //removes evicted page
+                //evicted page is whatever page the the clock hand is pointing to 
                 std::pair<pageTableEntry*,bool > evicted = pageFrames[clockHand];
                
                 pageFrames[clockHand].first->validTranslation = false;
                 pageFrameIndexes.erase(evicted.first);
-                //loads new page in memory with second chance bit set to true
+                //replaces evicted page with new page loaded from memory
                 pageFrames[clockHand] = std::make_pair(pageEntryAddress,true);
-                //the index of the new page in the vector is equal to wherever the clock hand ended
+               
                 pageFrameIndexes[pageEntryAddress] = clockHand;
                
 
