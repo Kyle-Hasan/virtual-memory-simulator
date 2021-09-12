@@ -49,13 +49,13 @@ simulator::results simulator::FIFO(){
            
             pageFramesIterators[pageEntryAddress] = std::prev(Frames.end());
 
-            //sets the physical page number as the distance from the iterator at the beginning of the queue 
-            //to the iterator where the page entry actually is.
+            /*sets the physical page number as the distance from the iterator at the beginning of the queue 
+            to the iterator where the page entry actually is.*/
             physicalPageNumber = std::distance(Frames.begin(),pageFramesIterators[pageEntryAddress]);
             
         }
         else{
-            //index of a page in the queue is difference between beginning iterator and iterator pointing to the page
+            //physical page number of a page in the queue is difference between beginning iterator and iterator pointing to the page
             physicalPageNumber = std::distance(Frames.begin(), pageFramesIterators[pageEntryAddress]);
             returnValue.hits++;
         }
@@ -69,8 +69,10 @@ simulator::results simulator::FIFO(){
 
 simulator::results simulator::LRU(){
     results returnValue;
-    //stores page frames as a doubly linked list(so that removing elements from the middle is more efficient)
-    //least recently page is at the back ,most recently used page is at the front
+    /*stores page frames as a doubly linked list(so that removing elements from the middle is more efficient)
+    least recently page is at the back ,most recently used page is at the front.
+	Uses pointers to pageTableEntry in order to update the evicted pageTableEntries in the pageTable map
+	*/
     std::list<pageTableEntry*> pageFrames;
     //maps virtual page number to a page table entry
     std::unordered_map<int,pageTableEntry> pageTable;
