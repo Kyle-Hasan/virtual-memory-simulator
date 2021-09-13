@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     std::cout << " invalid file or page frames number" << std::endl;
     std::cout << "Usage is ./(executable name) (page frames number) (path to file) (algorithm type)" << std::endl;
   }
- 
+  return 0;
  
  
  
