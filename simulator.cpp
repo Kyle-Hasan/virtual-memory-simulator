@@ -23,7 +23,7 @@ simulator::results simulator::FIFO(){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
         int pageOffset = ((request))& 0x1F;
 
-        pageTableEntry*  pageEntryAddress = &pageTable[virtualPageNumber];
+        pageTableEntry* pageEntryPointer = &pageTable[virtualPageNumber];
 
         int physicalPageNumber;
 
@@ -45,18 +45,18 @@ simulator::results simulator::FIFO(){
 
             }
             
-            Frames.push_back(pageEntryAddress);
+            Frames.push_back(pageEntryPointer);
            
-            pageFramesIterators[pageEntryAddress] = std::prev(Frames.end());
+            pageFramesIterators[pageEntryPointer] = std::prev(Frames.end());
 
             /*sets the physical page number as the distance from the iterator at the beginning of the queue 
             to the iterator where the page entry actually is.*/
-            physicalPageNumber = std::distance(Frames.begin(),pageFramesIterators[pageEntryAddress]);
+            physicalPageNumber = std::distance(Frames.begin(),pageFramesIterators[pageEntryPointer]);
             
         }
         else{
             //physical page number of a page in the queue is difference between beginning iterator and iterator pointing to the page
-            physicalPageNumber = std::distance(Frames.begin(), pageFramesIterators[pageEntryAddress]);
+            physicalPageNumber = std::distance(Frames.begin(), pageFramesIterators[pageEntryPointer]);
             returnValue.hits++;
         }
         //calculates physical address as physicalPageNumber*32+ pageOffset because the page sizes are 32.
@@ -82,7 +82,7 @@ simulator::results simulator::LRU(){
     for(const auto &request : requests){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
         int pageOffset = ((request))& 0x1F;
-        pageTableEntry*  pageEntryAddress = &pageTable[virtualPageNumber];
+        pageTableEntry* pageEntryPointer = &pageTable[virtualPageNumber];
         int physicalPageNumber;
       
         if(!pageTable[virtualPageNumber].validTranslation){
@@ -103,10 +103,10 @@ simulator::results simulator::LRU(){
 
             }
             //places new page at front of list because new page is the most recently used page
-            pageFrames.push_front(pageEntryAddress);
+            pageFrames.push_front(pageEntryPointer);
             //sets iterator of new page entry to intially start at beginning of the list
             //(this gets updated when new pages are added)
-            pageFramesIterators[pageEntryAddress] = pageFrames.begin();
+            pageFramesIterators[pageEntryPointer] = pageFrames.begin();
         
             physicalPageNumber = 0;
         }
@@ -115,11 +115,11 @@ simulator::results simulator::LRU(){
 			 returnValue.hits++;
             //sets the physical page number as the distance from the iterator at the beginning of the list
             //to the iterator where the page entry actually is.
-           physicalPageNumber = std::distance(pageFrames.begin(), pageFramesIterators[pageEntryAddress]);
+           physicalPageNumber = std::distance(pageFrames.begin(), pageFramesIterators[pageEntryPointer]);
             //moves the page from the back of the list to the front of the list to represent it's the most recently used page
-            pageFrames.erase(pageFramesIterators[pageEntryAddress]);
-            pageFrames.push_front(pageEntryAddress);
-            pageFramesIterators[pageEntryAddress] = pageFrames.begin();
+            pageFrames.erase(pageFramesIterators[pageEntryPointer]);
+            pageFrames.push_front(pageEntryPointer);
+            pageFramesIterators[pageEntryPointer] = pageFrames.begin();
 
           
             }
@@ -144,7 +144,7 @@ simulator::results simulator::Optimal(){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
        
         int pageOffset = ((request))& 0x1F;
-        pageTableEntry*  pageEntryAddress = &pageTable[virtualPageNumber];
+        pageTableEntry* pageEntryPointer = &pageTable[virtualPageNumber];
         int physicalPageNumber;
        
        
@@ -171,17 +171,17 @@ simulator::results simulator::Optimal(){
                 
                 pageFrames.erase(evicted);
                 //replaces page at evicted physical page number with new page
-                pageFrames[pageEntryAddress] = pageFrameIndex;
+                pageFrames[pageEntryPointer] = pageFrameIndex;
 
                 }
             //this else runs if there's a page frame open in memory
             else{
                //sets physical page number of page entry to be the first open frame.
-                pageFrames[pageEntryAddress] = pageFrames.size();
+                pageFrames[pageEntryPointer] = pageFrames.size();
                 }
           
         }
-        physicalPageNumber = pageFrames[pageEntryAddress];
+        physicalPageNumber = pageFrames[pageEntryPointer];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
 
     }
@@ -210,15 +210,15 @@ simulator::results simulator::Clock(){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
        
         int pageOffset = ((request))& 0x1F;
-		
-        pageTableEntry* pageEntryAddress = &(pageTable[virtualPageNumber]);
+		//gets the address to the pageTableEntry for this virtual number so that we can create/access to pointer to it for pageFrames
+        pageTableEntry* pageEntryPointer = &(pageTable[virtualPageNumber]);
         int physicalPageNumber;
         
         if(pageTable[virtualPageNumber].validTranslation){
             returnValue.hits++;
             
             
-            int index = pageFrameIndexes[pageEntryAddress] ;
+            int index = pageFrameIndexes[pageEntryPointer] ;
             //sets the page entry's second chance bit to true since it there was a hit
             pageFrames[index].second = true;
             
@@ -255,9 +255,9 @@ simulator::results simulator::Clock(){
                 pageFrames[clockHand].first->validTranslation = false;
                 pageFrameIndexes.erase(evicted.first);
                 //replaces evicted page with new page loaded from memory
-                pageFrames[clockHand] = std::make_pair(pageEntryAddress,true);
+                pageFrames[clockHand] = std::make_pair(pageEntryPointer,true);
                
-                pageFrameIndexes[pageEntryAddress] = clockHand;
+                pageFrameIndexes[pageEntryPointer] = clockHand;
                
 
 
@@ -266,14 +266,14 @@ simulator::results simulator::Clock(){
             //this runs if there's still space in the memory for another page to be added
             else{
                 //loads new page into memory with a second chance bit equal to true
-                pageFrames.push_back(std::make_pair(pageEntryAddress,true));
+                pageFrames.push_back(std::make_pair(pageEntryPointer,true));
                 
-                pageFrameIndexes[pageEntryAddress] = pageFrames.size()-1;
+                pageFrameIndexes[pageEntryPointer] = pageFrames.size()-1;
 
             }
           }
 
-        physicalPageNumber = pageFrameIndexes[pageEntryAddress];
+        physicalPageNumber = pageFrameIndexes[pageEntryPointer];
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
         }
 
@@ -302,7 +302,10 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
             /*sees if the page requested in the future is currently stored in the page table,
             if not this request can be skipped since it doesn't correspond to any frame in memory
             */
-            pageTableEntry* pageEntry= pageTable.find(virtualPageNumber);
+           /*keep in mind that pageEntry->first is a virtual page number and that pageEntry->second is the 
+           page table entry that maps to that virtual page number
+           */
+            auto pageEntry= pageTable.find(virtualPageNumber);
             if(pageEntry == pageTable.end()){
                 continue;
 
@@ -312,13 +315,13 @@ simulator::pageTableEntry* simulator::getFarthest(int index,
             else if(!pageEntry->second.validTranslation){
                 continue;
             }
-          
-            pageTableEntry* pageEntryAddress = &(pageEntry->second);
+        
+            pageTableEntry* pageEntryPointer = &(pageEntry->second);
             
             /*if the page entry address is the same as the current frame,
             this means that page is used in the future
             */
-            if(pageEntryAddress == currentFrame ){
+            if(pageEntryPointer == currentFrame ){
                 
                 if(starting > furthest){
                 furthest = starting;
