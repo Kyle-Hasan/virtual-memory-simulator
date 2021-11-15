@@ -69,66 +69,59 @@ simulator::results simulator::FIFO(){
 
 simulator::results simulator::LRU(){
     results returnValue;
-    /*stores page frames as a doubly linked list(so that removing elements from the middle is more efficient)
-    least recently page is at the back ,most recently used page is at the front.
-	Uses pointers to pageTableEntry in order to update the evicted pageTableEntries in the pageTable map
-	*/
-    std::list<pageTableEntry*> pageFrames;
-    //maps virtual page number to a page table entry
-    std::unordered_map<int,pageTableEntry> pageTable;
-    //maps entries from page table to their respective iterator in the page frames list
-    std::unordered_map<pageTableEntry*,std::list<pageTableEntry*>::iterator> pageFramesIterators;
+	//stores virtual page numbers in the virtual memory
+    std::list<int> pageFrames;
     
+	//maps virtual page numbers to iterator in linked list and pageTableEntry
+    std::unordered_map<int,std::pair<std::list<int>::iterator,pageTableEntry>> pageTable;
+    //std::cout << "size of a pageTablEntry" << sizeof(pageTableEntry) << std::endl;
     for(const auto &request : requests){
         int virtualPageNumber = ((request) & 0XE0) >> 5;
         int pageOffset = ((request))& 0x1F;
-        pageTableEntry* pageEntryPointer = &pageTable[virtualPageNumber];
+        
         int physicalPageNumber;
-      
-        if(!pageTable[virtualPageNumber].validTranslation){
-          
-            pageTable[virtualPageNumber].validTranslation = true;
+       // std::cout << " this is the request " << request << " this is the valid bit " << pageTable[virtualPageNumber].validTranslation << " this is the page number" << virtualPageNumber << std::endl;
+        if(pageTable[virtualPageNumber].second.validTranslation == 0){
+            pageTable[virtualPageNumber].second.validTranslation = 1;
             
             returnValue.misses++;
-            //if the list has the maximum number of page frames in memory, then the 
-            //least recently used page needs to be evicted
             if((int)pageFrames.size() == numFrames){
-            
-                pageTableEntry *evicted = pageFrames.back();
-             
-                evicted->validTranslation = false;
+               // std::cout << " evicting a page " << std::endl;
+                int evicted = pageFrames.back();
+                pageTable[evicted].second.validTranslation = 0;
                 pageFrames.pop_back();
-           
-                pageFramesIterators.erase(evicted);
+                pageTable.erase(evicted);
 
             }
-            //places new page at front of list because new page is the most recently used page
-            pageFrames.push_front(pageEntryPointer);
-            //sets iterator of new page entry to intially start at beginning of the list
-            //(this gets updated when new pages are added)
-            pageFramesIterators[pageEntryPointer] = pageFrames.begin();
-        
+            //::cout << " placing new page into memory " << std::endl;
+            pageFrames.push_front(virtualPageNumber);
+            pageTable[virtualPageNumber].first = pageFrames.begin();
             physicalPageNumber = 0;
-        }
-    
-        else{
-			 returnValue.hits++;
-            //sets the physical page number as the distance from the iterator at the beginning of the list
-            //to the iterator where the page entry actually is.
-           physicalPageNumber = std::distance(pageFrames.begin(), pageFramesIterators[pageEntryPointer]);
-            //moves the page from the back of the list to the front of the list to represent it's the most recently used page
-            pageFrames.erase(pageFramesIterators[pageEntryPointer]);
-            pageFrames.push_front(pageEntryPointer);
-            pageFramesIterators[pageEntryPointer] = pageFrames.begin();
 
-          
-            }
-        //calculates address as physicalPageNumber*32+ pageOffset because the page sizes are 32.
+
+
+        }
+        else{
+           // std::cout << "updating existing entry " << std::endl;
+           physicalPageNumber = std::distance(pageFrames.begin(), pageTable[virtualPageNumber].first);
+            pageFrames.erase(pageTable[virtualPageNumber].first);
+            pageFrames.push_front(virtualPageNumber);
+            pageTable[virtualPageNumber].first = pageFrames.begin();
+
+            returnValue.hits++;
+
+
+
+        }
+        
+        //std::cout << "physical page number is " << physicalPageNumber << std::endl;
+        
         returnValue.addresses.push_back(physicalPageNumber*32+pageOffset);
         }
         
         return returnValue;
-    }
+
+}
 
 
 simulator::results simulator::Optimal(){
